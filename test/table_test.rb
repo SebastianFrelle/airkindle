@@ -36,17 +36,12 @@ class TableTest < Minitest::Test
   end
 
   def test_create_record
-    record_id = @table.records.first['id']
+    field_values = @table.records.first.select { |k, v| k == 'fields' }
 
-    # field_values = # init hash of values here
+    record = @table.create_record(field_values)
 
-    # figure out a way to do field types here in order to be able to pass
-    # values as arguments
-    record = @table.create_record()
-
-    assert_equal record['id'], record_id
-    
-    assert_field_names(record)
+    refute_nil record
+    assert_fields_are_the_same(record['fields'])
   end
 
   def test_read_record
@@ -56,19 +51,51 @@ class TableTest < Minitest::Test
     refute_nil record
     assert_equal record['id'], record_id
 
-    assert_field_names(record)
+    assert_fields_are_the_same(record['fields'])
   end
 
   def test_update_record
     record_id = @table.records.first['id']
+    word = 'scaffolding'
+    difficulty = 'Easy'
 
-    # init field values somehow
-    # maybe write a method that maps mock data to table fields in a hash
-    new_field_values = {"field_name" => "new_field_value"}
+    # probably ok to hardcode this for now
+    new_field_values = { "fields" => { 
+        "Word" => word,
+        "Difficulty" => difficulty
+      }
+    }
+
     updated_record = @table.update_record(record_id, new_field_values)
 
-    assert_equal updated_record['id'], record_id
-    assert_field_names(record)
+    refute_nil updated_record
+
+    assert_equal word, updated_record['Word']
+    assert_equal difficulty, updated_record['Difficulty']
+
+    assert_fields_are_the_same(record)
+  end
+
+  def test_update_part_of_record
+    record_id = @table.records.first['id']
+    word = 'scaffolding'
+    difficulty = 'Easy'
+
+    # probably ok to hardcode this for now
+    new_field_values = { "fields" => {
+        "Word" => word,
+        "Difficulty" => difficulty
+      }
+    }
+
+    updated_record = @table.update_part_of_record(record_id, new_field_values)
+
+    refute_nil updated_record
+
+    assert_equal word, updated_record['fields']['Word']
+    assert_equal difficulty, updated_record['fields']['Difficulty']
+
+    assert_fields_are_the_same(updated_record['fields'])
   end
 
   def test_delete_record
@@ -80,11 +107,11 @@ class TableTest < Minitest::Test
 
   private
 
-  def assert_field_names(record)
-    field_names = record['fields'].keys
-    
+  def assert_fields_are_the_same(record_fields)
+    record_field_names = record_fields.keys
+
     @table.fields.each do |field|
-      assert field_names.include?(field)
+      assert record_field_names.include?(field)
     end
   end
 end
